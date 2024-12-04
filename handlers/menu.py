@@ -1,12 +1,11 @@
 from aiogram import types, F
 from aiogram.filters.command import Command
-from aiogram.filters.text import Text
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from bot import dp
 from database.db_session import get_db
 from database.models import User, Bank, Card
-from states.card_states import CardStates
+from states import CardStates, BankStates
 
 # Создаем клавиатуры для разных ролей
 role_1_keyboard = ReplyKeyboardMarkup(
@@ -52,20 +51,6 @@ role_4_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True,
     selective=True
 )
-
-@dp.message(Command("menu"))
-async def cmd_menu(message: types.Message):
-    db = next(get_db())
-    user = db.query(User).filter(User.username == message.from_user.username).first()
-    if user:
-        if user.role == 1:
-            await message.answer("Выберите команду:", reply_markup=role_1_keyboard)
-        elif user.role == 2:
-            await message.answer("Выберите команду:", reply_markup=role_2_keyboard)
-        elif user.role == 3:
-            await message.answer("Выберите команду:", reply_markup=role_3_keyboard)
-        elif user.role == 4:
-            await message.answer("Выберите команду:", reply_markup=role_4_keyboard)
 
 # Обработчики для текстовых команд
 @dp.message(F.text == "💸 Съём")
@@ -137,12 +122,35 @@ async def cmd_remove_all_cards(message: types.Message):
     await message.answer("Команда для удаления всех карт.")
 
 @dp.message(F.text == "🏦 Добавить банк")
-async def cmd_add_bank(message: types.Message):
+async def cmd_add_bank(message: types.Message, state: FSMContext):
     await message.answer("Введите название банка:")
+    await state.set_state(BankStates.adding_bank_name)
+
+@dp.message(BankStates.adding_bank_name)
+async def process_add_bank(message: types.Message, state: FSMContext):
+    db = next(get_db())
+    bank = Bank(name=message.text)
+    db.add(bank)
+    db.commit()
+    await message.answer("Банк успешно добавлен.")
+    await state.clear()
 
 @dp.message(F.text == "🏦 Удалить банк")
-async def cmd_remove_bank(message: types.Message):
-    await message.answer("Команда для удаления банка.")
+async def cmd_remove_bank(message: types.Message, state: FSMContext):
+    await message.answer("Введите название банка:")
+    await state.set_state(BankStates.removing_bank_name)
+
+@dp.message(BankStates.removing_bank_name)
+async def process_remove_bank(message: types.Message, state: FSMContext):
+    db = next(get_db())
+    bank = db.query(Bank).filter(Bank.name == message.text).first()
+    if bank:
+        db.delete(bank)
+        db.commit()
+        await message.answer("Банк успешно удален.")
+    else:
+        await message.answer("Банк не найден. Попробуйте снова.")
+    await state.clear()
 
 @dp.message(F.text == "💸 Перевод")
 async def cmd_transfer(message: types.Message):
