@@ -6,13 +6,21 @@ from database.db_session import get_db
 from database.models import User
 from states import AuthStates
 from config_reader import config
+from handlers.menu import role_1_keyboard, role_2_keyboard, role_3_keyboard, role_4_keyboard 
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message, state: FSMContext):
     db = next(get_db())
     user = db.query(User).filter(User.username == message.from_user.username).first()
     if user:
-        await message.answer(f"Добро пожаловать! Ваш уровень доступа: {user.role}.")
+        if user.role == 1:
+            await message.answer("Добро пожаловать! Вы можете использовать бота.", reply_markup=role_1_keyboard)
+        elif user.role == 2:
+            await message.answer("Добро пожаловать! Вы можете использовать бота.", reply_markup=role_2_keyboard)
+        elif user.role == 3:
+            await message.answer("Добро пожаловать! Вы можете использовать бота.", reply_markup=role_3_keyboard)
+        elif user.role == 4:
+            await message.answer("Добро пожаловать! Вы можете использовать бота.", reply_markup=role_4_keyboard)
     else:
         await message.answer("Для доступа к боту введите пароль.")
         await state.set_state(AuthStates.waiting_for_password)
@@ -28,7 +36,14 @@ async def process_password(message: types.Message, state: FSMContext):
         user = User(username=message.from_user.username, full_name=message.from_user.full_name, role=role)
         db.add(user)
         db.commit()
-        await message.answer(f"Пароль верный. Ваш уровень доступа: {role}.")
+        if role == 1:
+            await message.answer(f"Пароль верный. Ваш уровень доступа: {role}.", reply_markup=role_1_keyboard)
+        elif role == 2:
+            await message.answer(f"Пароль верный. Ваш уровень доступа: {role}.", reply_markup=role_2_keyboard)
+        elif role == 3:
+            await message.answer(f"Пароль верный. Ваш уровень доступа: {role}.", reply_markup=role_3_keyboard)
+        elif role == 4:
+            await message.answer(f"Пароль верный. Ваш уровень доступа: {role}.", reply_markup=role_4_keyboard)
         await state.clear()
     else:
         await message.answer("Неправильный пароль. Доступ запрещен.")
