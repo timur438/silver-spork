@@ -6,3 +6,4 @@ __pycache__/
 .vscode/
 database/__pycache__/
 handlers/__pycache__/
+states/__pycache__/
