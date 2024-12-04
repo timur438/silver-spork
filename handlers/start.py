@@ -13,9 +13,9 @@ async def cmd_start(message: types.Message, state: FSMContext):
     db = next(get_db())
     user = db.query(User).filter(User.username == message.from_user.username).first()
     if user:
-        await message.answer("Welcome back! You can use the bot.")
+        await message.answer("Добро пожаловать! Вы можете использовать бота.")
     else:
-        await message.answer("Please enter the password to access the bot.")
+        await message.answer("Для доступа к боту введите пароль.")
         await state.set_state(AuthStates.waiting_for_password)
 
 @dp.message(AuthStates.waiting_for_password)
@@ -25,8 +25,8 @@ async def process_password(message: types.Message, state: FSMContext):
         user = User(username=message.from_user.username, full_name=message.from_user.full_name)
         db.add(user)
         db.commit()
-        await message.answer("Password is correct. You have been granted access.")
+        await message.answer("Пароль верный. Доступ получен.")
         await state.clear()
     else:
-        await message.answer("Incorrect password. Access denied.")
+        await message.answer("Неправильный пароль. Доступ запрещен.")
         await state.clear()
