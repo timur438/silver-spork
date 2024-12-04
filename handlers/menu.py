@@ -1,59 +1,13 @@
 import re
 from aiogram import types, F
 from aiogram.filters.command import Command
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from bot import dp
 from database.db_session import get_db
 from database.models import User, Bank, Card
 from states import CardStates, BankStates
+from keyboards.menu_keyboards import role_1_keyboard, role_2_keyboard, role_3_keyboard, role_4_keyboard
 
-# Создаем клавиатуры для разных ролей
-role_1_keyboard = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="💳 Добавить карту"), KeyboardButton(text="🗑 Удалить карту")],
-        [KeyboardButton(text="🏦 Добавить банк"), KeyboardButton(text="🏦 Удалить банк")],
-    ],
-    resize_keyboard=True,
-    selective=True
-)
-
-role_2_keyboard = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="💸 Съём"), KeyboardButton(text="💳 Добавить карту")],
-        [KeyboardButton(text="🗑 Удалить карту"), KeyboardButton(text="🗑 Удалить все карты")],
-        [KeyboardButton(text="🏦 Добавить банк"), KeyboardButton(text="🏦 Удалить банк")],
-        [KeyboardButton(text="💸 Перевод")],
-    ],
-    resize_keyboard=True,
-    selective=True
-)
-
-role_3_keyboard = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="💸 Съём"), KeyboardButton(text="💳 Добавить карту")],
-        [KeyboardButton(text="🗑 Удалить карту"), KeyboardButton(text="🗑 Удалить все карты")],
-        [KeyboardButton(text="🏦 Добавить банк"), KeyboardButton(text="🏦 Удалить банк")],
-        [KeyboardButton(text="💸 Перевод"), KeyboardButton(text="🔄 Обнулить кассу")],
-        [KeyboardButton(text="📊 Статистика")],
-    ],
-    resize_keyboard=True,
-    selective=True
-)
-
-role_4_keyboard = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="💸 Съём"), KeyboardButton(text="💳 Добавить карту")],
-        [KeyboardButton(text="🗑 Удалить карту"), KeyboardButton(text="🗑 Удалить все карты")],
-        [KeyboardButton(text="🏦 Добавить банк"), KeyboardButton(text="🏦 Удалить банк")],
-        [KeyboardButton(text="💸 Перевод"), KeyboardButton(text="🔄 Обнулить кассу")],
-        [KeyboardButton(text="📊 Статистика"), KeyboardButton(text="🔒 Сменить пароль")],
-    ],
-    resize_keyboard=True,
-    selective=True
-)
-
-# Обработчики для текстовых команд
 @dp.message(F.text == "💸 Съём")
 async def cmd_withdraw(message: types.Message, state: FSMContext):
     await state.clear()

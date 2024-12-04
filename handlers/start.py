@@ -6,7 +6,7 @@ from database.db_session import get_db
 from database.models import User
 from states import AuthStates
 from config_reader import config
-from handlers.menu import role_1_keyboard, role_2_keyboard, role_3_keyboard, role_4_keyboard 
+from keyboards.menu_keyboards import role_1_keyboard, role_2_keyboard, role_3_keyboard, role_4_keyboard
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message, state: FSMContext):
