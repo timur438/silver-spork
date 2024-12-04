@@ -1,5 +1,5 @@
 from database.db_session import engine, Base
-from database.models import User
+from database.models import User, Bank, Card
 
 def init_db():
     Base.metadata.create_all(bind=engine)
