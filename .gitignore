@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.db
 .vscode/
 database/__pycache__/
 handlers/__pycache__/
