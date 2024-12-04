@@ -7,14 +7,12 @@ from database.models import User
 from states import AuthStates
 from config_reader import config
 
-PASSWORD = "your_secret_password"
-
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message, state: FSMContext):
     db = next(get_db())
     user = db.query(User).filter(User.username == message.from_user.username).first()
     if user:
-        await message.answer("Добро пожаловать! Вы можете использовать бота.")
+        await message.answer(f"Добро пожаловать! Ваш уровень доступа: {user.role}.")
     else:
         await message.answer("Для доступа к боту введите пароль.")
         await state.set_state(AuthStates.waiting_for_password)
@@ -22,7 +20,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
 @dp.message(AuthStates.waiting_for_password)
 async def process_password(message: types.Message, state: FSMContext):
     db = next(get_db())
-    if message.text == PASSWORD:
+    if message.text == config.password:
         role = 1
         highest_admin_usernames = config.get_highest_admin_usernames()
         if message.from_user.username in highest_admin_usernames:
@@ -30,7 +28,7 @@ async def process_password(message: types.Message, state: FSMContext):
         user = User(username=message.from_user.username, full_name=message.from_user.full_name, role=role)
         db.add(user)
         db.commit()
-        await message.answer("Пароль верный. Доступ получен.")
+        await message.answer(f"Пароль верный. Ваш уровень доступа: {role}.")
         await state.clear()
     else:
         await message.answer("Неправильный пароль. Доступ запрещен.")
