@@ -5,6 +5,7 @@ from bot import dp
 from database.db_session import get_db
 from database.models import User
 from states import AuthStates
+from config_reader import config
 
 PASSWORD = "your_secret_password"
 
@@ -22,7 +23,11 @@ async def cmd_start(message: types.Message, state: FSMContext):
 async def process_password(message: types.Message, state: FSMContext):
     db = next(get_db())
     if message.text == PASSWORD:
-        user = User(username=message.from_user.username, full_name=message.from_user.full_name)
+        role = 1
+        highest_admin_usernames = config.get_highest_admin_usernames()
+        if message.from_user.username in highest_admin_usernames:
+            role = 4
+        user = User(username=message.from_user.username, full_name=message.from_user.full_name, role=role)
         db.add(user)
         db.commit()
         await message.answer("Пароль верный. Доступ получен.")
