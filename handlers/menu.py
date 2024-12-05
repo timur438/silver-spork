@@ -201,7 +201,3 @@ async def cmd_info(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer("Команда для отображения статистики.")
 
-@dp.message(F.text == "🔒 Сменить пароль")
-async def cmd_change_pass(message: types.Message, state: FSMContext):
-    await state.clear()
-    await message.answer("Команда для смены пароля.")
