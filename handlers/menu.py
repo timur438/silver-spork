@@ -18,7 +18,12 @@ def parse_amount(amount_str):
 @role_required(2)
 async def cmd_withdraw(message: types.Message, state: FSMContext):
     await state.clear()
-    await message.answer("Введите последние 4 цифры карты:")
+    db = next(get_db())
+    cards = db.query(Card).all()
+    card_keyboard = types.InlineKeyboardMarkup(
+        inline_keyboard=[[types.InlineKeyboardButton(text=f"{card.last_four_digits} ({card.bank_name})")] for card in cards]
+    )
+    await message.answer("Введите последние 4 цифры карты:", reply_markup=card_keyboard)
     await state.set_state(CardStates.withdraw_card_number)
 
 @dp.message(CardStates.withdraw_card_number)
@@ -42,7 +47,9 @@ async def process_withdraw_amount(message: types.Message, state: FSMContext):
 
     if card and card.remaining_limit >= amount:
         await state.update_data(amount=amount)
-        await message.answer(f"Подтвердите списание {amount} с карты (да/нет):")
+        await message.answer(f"Подтвердите списание {amount} с карты (да/нет):", reply_markup=types.ReplyKeyboardMarkup(
+            keyboard=[types.KeyboardButton(text="Да"), types.KeyboardButton(text="Нет")]
+        ))
         await state.set_state(CardStates.withdraw_confirm)
     else:
         await message.answer("Недостаточно средств на карте или карта не найдена. Попробуйте снова.")
@@ -75,10 +82,8 @@ async def cmd_add_card(message: types.Message, state: FSMContext):
     await state.clear()
     db = next(get_db())
     banks = db.query(Bank).all()
-    bank_keyboard = types.ReplyKeyboardMarkup(
-        keyboard=[[types.KeyboardButton(text=bank.name) for bank in banks]],
-        resize_keyboard=True,
-        one_time_keyboard=True
+    bank_keyboard = types.InlineKeyboardMarkup(
+        inline_keyboard=[[types.InlineKeyboardButton(text=bank.name)] for bank in banks]
     )
     await message.answer("Выберите банк:", reply_markup=bank_keyboard)
     await state.set_state(CardStates.adding_bank)
@@ -137,10 +142,8 @@ async def cmd_remove_card(message: types.Message, state: FSMContext):
         await message.answer("У вас нет добавленных карт.")
         return
 
-    card_keyboard = types.ReplyKeyboardMarkup(
-        keyboard=[[types.KeyboardButton(text=f"{card.last_four_digits} ({card.bank_name})")] for card in cards],
-        resize_keyboard=True,
-        one_time_keyboard=True
+    card_keyboard = types.InlineKeyboardMarkup(
+        inline_keyboard=[[types.InlineKeyboardButton(text=f"{card.last_four_digits} ({card.bank_name})")] for card in cards]
     )
     await message.answer("Выберите карту для удаления:", reply_markup=card_keyboard)
     await state.set_state(CardStates.removing_last_four_digits)
@@ -164,7 +167,9 @@ async def process_remove_card(message: types.Message, state: FSMContext):
 @role_required(3)
 async def cmd_remove_all_cards(message: types.Message, state: FSMContext):
     await state.clear()
-    await message.answer("Подтвердите удаление всех карт (да/нет):")
+    await message.answer("Подтвердите удаление всех карт (да/нет):", reply_markup=types.ReplyKeyboardMarkup(
+        keyboard=[types.KeyboardButton(text="Да"), types.KeyboardButton(text="Нет")]
+    ))
     await state.set_state(CardStates.removing_all_cards)
 
 @dp.message(CardStates.removing_all_cards)
@@ -209,10 +214,8 @@ async def cmd_remove_bank(message: types.Message, state: FSMContext):
         await message.answer("У вас нет добавленных банков.")
         return
 
-    bank_keyboard = types.ReplyKeyboardMarkup(
-        keyboard=[[types.KeyboardButton(text=bank.name)] for bank in banks],
-        resize_keyboard=True,
-        one_time_keyboard=True
+    bank_keyboard = types.InlineKeyboardMarkup(
+        inline_keyboard=[[types.InlineKeyboardButton(text=bank.name)] for bank in banks]
     )
     await message.answer("Выберите банк для удаления:", reply_markup=bank_keyboard)
     await state.set_state(BankStates.removing_bank_name)
