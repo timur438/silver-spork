@@ -14,7 +14,7 @@ role_2_keyboard = ReplyKeyboardMarkup(
         [KeyboardButton(text="💸 Съём"), KeyboardButton(text="💳 Добавить карту")],
         [KeyboardButton(text="🗑 Удалить карту"), KeyboardButton(text="🗑 Удалить все карты")],
         [KeyboardButton(text="🏦 Добавить банк"), KeyboardButton(text="🏦 Удалить банк")],
-        [KeyboardButton(text="💸 Перевод")],
+        [KeyboardButton(text="💸 Перевод"), KeyboardButton(text="📊 Статистика")],
     ],
     resize_keyboard=True,
     selective=True

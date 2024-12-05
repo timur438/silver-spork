@@ -9,6 +9,9 @@ class CardStates(StatesGroup):
     adding_daily_limit = State()
     removing_last_four_digits = State()
     removing_all_cards = State()
+    withdraw_card_number = State()
+    withdraw_amount = State()
+    withdraw_confirm = State()
 
 class BankStates(StatesGroup):
     adding_bank_name = State()

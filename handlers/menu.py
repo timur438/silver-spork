@@ -8,10 +8,66 @@ from database.models import User, Bank, Card
 from states import CardStates, BankStates
 from keyboards.menu_keyboards import role_1_keyboard, role_2_keyboard, role_3_keyboard, role_4_keyboard
 
+def parse_amount(amount_str):
+    # Удаляем пробелы, точки и запятые
+    amount_str = amount_str.replace(' ', '').replace('.', '').replace(',', '')
+    # Преобразуем строку в целое число
+    amount = int(amount_str)
+    return amount
+
 @dp.message(F.text == "💸 Съём")
 async def cmd_withdraw(message: types.Message, state: FSMContext):
     await state.clear()
-    await message.answer("Команда для снятия средств.")
+    await message.answer("Введите последние 4 цифры карты:")
+    await state.set_state(CardStates.withdraw_card_number)
+
+@dp.message(CardStates.withdraw_card_number)
+async def process_withdraw_card_number(message: types.Message, state: FSMContext):
+    if re.match(r'^\d{4}$', message.text):
+        await state.update_data(last_four_digits=message.text)
+        await message.answer("Введите сумму для списания (например, 400 или 400.000):")
+        await state.set_state(CardStates.withdraw_amount)
+    else:
+        await message.answer("Пожалуйста, введите ровно 4 цифры.")
+        await state.set_state(CardStates.withdraw_card_number)
+
+@dp.message(CardStates.withdraw_amount)
+async def process_withdraw_amount(message: types.Message, state: FSMContext):
+    amount = parse_amount(message.text)
+    data = await state.get_data()
+    last_four_digits = data.get('last_four_digits')
+
+    db = next(get_db())
+    card = db.query(Card).filter(Card.last_four_digits == last_four_digits).first()
+
+    if card and card.remaining_limit >= amount:
+        await state.update_data(amount=amount)
+        await message.answer(f"Подтвердите списание {amount} с карты (да/нет):")
+        await state.set_state(CardStates.withdraw_confirm)
+    else:
+        await message.answer("Недостаточно средств на карте или карта не найдена. Попробуйте снова.")
+        await state.clear()
+
+@dp.message(CardStates.withdraw_confirm)
+async def process_withdraw_confirm(message: types.Message, state: FSMContext):
+    if message.text.lower() == "да":
+        data = await state.get_data()
+        last_four_digits = data.get('last_four_digits')
+        amount = data.get('amount')
+
+        db = next(get_db())
+        card = db.query(Card).filter(Card.last_four_digits == last_four_digits).first()
+
+        if card:
+            card.remaining_limit -= amount
+            db.commit()
+            await message.answer(f"С карты успешно списано {amount}.")
+        else:
+            await message.answer("Карта не найдена. Попробуйте снова.")
+        await state.clear()
+    else:
+        await message.answer("Списание отменено.")
+        await state.clear()
 
 @dp.message(F.text == "💳 Добавить карту")
 async def cmd_add_card(message: types.Message, state: FSMContext):
@@ -35,7 +91,7 @@ async def process_bank(message: types.Message, state: FSMContext):
 async def process_last_four_digits(message: types.Message, state: FSMContext):
     if re.match(r'^\d{4}$', message.text):
         await state.update_data(last_four_digits=message.text)
-        await message.answer("Введите суточный лимит:")
+        await message.answer("Введите суточный лимит (например, 400000 или 400.000):")
         await state.set_state(CardStates.adding_daily_limit)
     else:
         await message.answer("Пожалуйста, введите ровно 4 цифры.")
@@ -43,27 +99,22 @@ async def process_last_four_digits(message: types.Message, state: FSMContext):
 
 @dp.message(CardStates.adding_daily_limit)
 async def process_daily_limit(message: types.Message, state: FSMContext):
-    if re.match(r'^\d+(\.\d{3})?$', message.text.replace(' ', '')):
-        db = next(get_db())
-        data = await state.get_data()
-        bank_id = data.get('bank_id')
-        last_four_digits = data.get('last_four_digits')
-        daily_limit = float(message.text.replace(' ', '').replace(',', '.'))
+    daily_limit = parse_amount(message.text)
+    db = next(get_db())
+    data = await state.get_data()
+    bank_id = data.get('bank_id')
+    last_four_digits = data.get('last_four_digits')
 
-        card = Card(
-            bank_id=bank_id,
-            last_four_digits=last_four_digits,
-            daily_limit=daily_limit,
-            remaining_limit=daily_limit,
-            current_balance=0.0
-        )
-        db.add(card)
-        db.commit()
-        await message.answer("Карта успешно добавлена.")
-        await state.clear()
-    else:
-        await message.answer("Пожалуйста, введите корректный суточный лимит (например, 400000 или 400.000).")
-        await state.set_state(CardStates.adding_daily_limit)
+    card = Card(
+        bank_id=bank_id,
+        last_four_digits=last_four_digits,
+        daily_limit=daily_limit,
+        remaining_limit=daily_limit
+    )
+    db.add(card)
+    db.commit()
+    await message.answer("Карта успешно добавлена.")
+    await state.clear()
 
 @dp.message(F.text == "🗑 Удалить карту")
 async def cmd_remove_card(message: types.Message, state: FSMContext):
