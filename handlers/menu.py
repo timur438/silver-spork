@@ -6,6 +6,7 @@ from bot import dp
 from database.db_session import get_db
 from database.models import User, Bank, Card
 from states import CardStates, BankStates
+from keyboards.menu_keyboards import role_1_keyboard, role_2_keyboard, role_3_keyboard, role_4_keyboard
 from decorators import role_required
 
 def parse_amount(amount_str):
@@ -69,9 +70,17 @@ async def process_withdraw_confirm(message: types.Message, state: FSMContext):
         await state.clear()
 
 @dp.message(F.text == "💳 Добавить карту")
+@role_required(1)
 async def cmd_add_card(message: types.Message, state: FSMContext):
     await state.clear()
-    await message.answer("Введите название банка:")
+    db = next(get_db())
+    banks = db.query(Bank).all()
+    bank_keyboard = types.ReplyKeyboardMarkup(
+        keyboard=[[types.KeyboardButton(text=bank.name) for bank in banks]],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+    await message.answer("Выберите банк:", reply_markup=bank_keyboard)
     await state.set_state(CardStates.adding_bank)
 
 @dp.message(CardStates.adding_bank)
@@ -79,7 +88,7 @@ async def process_bank(message: types.Message, state: FSMContext):
     db = next(get_db())
     bank = db.query(Bank).filter(Bank.name == message.text).first()
     if bank:
-        await state.update_data(bank_id=bank.id)
+        await state.update_data(bank_id=bank.id, bank_name=bank.name)
         await message.answer("Введите последние 4 цифры карты:")
         await state.set_state(CardStates.adding_last_four_digits)
     else:
@@ -103,12 +112,15 @@ async def process_daily_limit(message: types.Message, state: FSMContext):
     data = await state.get_data()
     bank_id = data.get('bank_id')
     last_four_digits = data.get('last_four_digits')
+    bank_name = data.get('bank_name')
 
     card = Card(
         bank_id=bank_id,
         last_four_digits=last_four_digits,
         daily_limit=daily_limit,
-        remaining_limit=daily_limit
+        remaining_limit=daily_limit,
+        added_by=message.from_user.username,
+        bank_name=bank_name
     )
     db.add(card)
     db.commit()
@@ -116,9 +128,21 @@ async def process_daily_limit(message: types.Message, state: FSMContext):
     await state.clear()
 
 @dp.message(F.text == "🗑 Удалить карту")
+@role_required(1)
 async def cmd_remove_card(message: types.Message, state: FSMContext):
     await state.clear()
-    await message.answer("Введите последние 4 цифры карты:")
+    db = next(get_db())
+    cards = db.query(Card).filter(Card.added_by == message.from_user.username).all()
+    if not cards:
+        await message.answer("У вас нет добавленных карт.")
+        return
+
+    card_keyboard = types.ReplyKeyboardMarkup(
+        keyboard=[[types.KeyboardButton(text=f"{card.last_four_digits} ({card.bank_name})")] for card in cards],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+    await message.answer("Выберите карту для удаления:", reply_markup=card_keyboard)
     await state.set_state(CardStates.removing_last_four_digits)
 
 @dp.message(CardStates.removing_last_four_digits)
@@ -126,9 +150,12 @@ async def process_remove_card(message: types.Message, state: FSMContext):
     db = next(get_db())
     card = db.query(Card).filter(Card.last_four_digits == message.text).first()
     if card:
-        db.delete(card)
-        db.commit()
-        await message.answer("Карта успешно удалена.")
+        if message.from_user.username == card.added_by or message.from_user.role >= 3:
+            db.delete(card)
+            db.commit()
+            await message.answer("Карта успешно удалена.")
+        else:
+            await message.answer("У вас нет прав для удаления этой карты.")
     else:
         await message.answer("Карта не найдена. Попробуйте снова.")
     await state.clear()
@@ -152,6 +179,7 @@ async def process_remove_all_cards(message: types.Message, state: FSMContext):
     await state.clear()
 
 @dp.message(F.text == "🏦 Добавить банк")
+@role_required(1)
 async def cmd_add_bank(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer("Введите название банка:")
@@ -165,16 +193,28 @@ async def process_check_bank(message: types.Message, state: FSMContext):
         await message.answer("Банк с таким названием уже существует. Попробуйте снова.")
         await state.set_state(BankStates.checking_bank_name)
     else:
-        bank = Bank(name=message.text)
+        bank = Bank(name=message.text, added_by=message.from_user.username)
         db.add(bank)
         db.commit()
         await message.answer("Банк успешно добавлен.")
         await state.clear()
 
 @dp.message(F.text == "🏦 Удалить банк")
+@role_required(1)
 async def cmd_remove_bank(message: types.Message, state: FSMContext):
     await state.clear()
-    await message.answer("Введите название банка:")
+    db = next(get_db())
+    banks = db.query(Bank).filter(Bank.added_by == message.from_user.username).all()
+    if not banks:
+        await message.answer("У вас нет добавленных банков.")
+        return
+
+    bank_keyboard = types.ReplyKeyboardMarkup(
+        keyboard=[[types.KeyboardButton(text=bank.name)] for bank in banks],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+    await message.answer("Выберите банк для удаления:", reply_markup=bank_keyboard)
     await state.set_state(BankStates.removing_bank_name)
 
 @dp.message(BankStates.removing_bank_name)
@@ -182,9 +222,12 @@ async def process_remove_bank(message: types.Message, state: FSMContext):
     db = next(get_db())
     bank = db.query(Bank).filter(Bank.name == message.text).first()
     if bank:
-        db.delete(bank)
-        db.commit()
-        await message.answer("Банк успешно удален.")
+        if message.from_user.username == bank.added_by or message.from_user.role >= 3:
+            db.delete(bank)
+            db.commit()
+            await message.answer("Банк успешно удален.")
+        else:
+            await message.answer("У вас нет прав для удаления этого банка.")
     else:
         await message.answer("Банк не найден. Попробуйте снова.")
     await state.clear()
@@ -206,4 +249,3 @@ async def cmd_casher_reset(message: types.Message, state: FSMContext):
 async def cmd_info(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer("Команда для отображения статистики.")
-

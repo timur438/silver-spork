@@ -3,7 +3,7 @@ from aiogram.fsm.context import FSMContext
 from bot import dp
 from database.db_session import get_db
 from database.models import User, Bank, Card
-from keyboards.menu_keyboards import admin_panel_keyboard, role_4_keyboard
+from keyboards.menu_keyboards import role_4_keyboard
 from states import CardStates, BankStates
 from decorators import role_required
 

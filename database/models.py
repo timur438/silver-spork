@@ -27,6 +27,7 @@ class Card(Base):
     daily_limit = Column(Float)
     remaining_limit = Column(Float)
     added_by = Column(String)
+    bank_name = Column(String)
 
     bank = relationship("Bank")
 
