@@ -16,6 +16,7 @@ class Bank(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
+    added_by = Column(String)
 
 class Card(Base):
     __tablename__ = 'cards'
@@ -25,7 +26,7 @@ class Card(Base):
     last_four_digits = Column(String, index=True)
     daily_limit = Column(Float)
     remaining_limit = Column(Float)
-    current_balance = Column(Float)
+    added_by = Column(String)
 
     bank = relationship("Bank")
 

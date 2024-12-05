@@ -5,8 +5,10 @@ from database.db_session import get_db
 from database.models import User, Bank, Card
 from keyboards.menu_keyboards import admin_panel_keyboard, role_4_keyboard
 from states import CardStates, BankStates
+from decorators import role_required
 
 @dp.message(F.text == "🛠️ Админ панель")
+@role_required(3)
 async def cmd_admin_panel(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer("Выберите команду:", reply_markup=admin_panel_keyboard)
@@ -17,6 +19,7 @@ async def cmd_back(message: types.Message, state: FSMContext):
     await state.clear()
 
 @dp.message(F.text == "💳 Добавить кэшера")
+@role_required(3)
 async def cmd_add_cashier(message: types.Message, state: FSMContext):
     await message.answer("Введите имя кэшера:")
     await state.set_state(CardStates.adding_cashier)
@@ -27,14 +30,15 @@ async def process_add_cashier(message: types.Message, state: FSMContext):
     db = next(get_db())
     user = db.query(User).filter(User.full_name == cashier_name).first()
     if user:
-        user.role = 2  # Устанавливаем роль инкассатора
+        user.role = 2 
         db.commit()
-        await message.answer(f"Кэшера {cashier_name} успешно добавлен.")
+        await message.answer(f"Кэшер {cashier_name} успешно добавлен.")
     else:
         await message.answer("Пользователь не найден. Попробуйте снова.")
     await state.clear()
 
 @dp.message(F.text == "🗑 Удалить кэшера")
+@role_required(3)
 async def cmd_remove_cashier(message: types.Message, state: FSMContext):
     await message.answer("Введите имя кэшера:")
     await state.set_state(CardStates.removing_cashier)
@@ -45,14 +49,15 @@ async def process_remove_cashier(message: types.Message, state: FSMContext):
     db = next(get_db())
     user = db.query(User).filter(User.full_name == cashier_name).first()
     if user and user.role == 2:
-        user.role = 1  # Удаляем роль инкассатора
+        user.role = 1 
         db.commit()
-        await message.answer(f"Кэшера {cashier_name} успешно удален.")
+        await message.answer(f"Кэшер {cashier_name} успешно удален.")
     else:
-        await message.answer("Кэшера не найден или не является инкассатором. Попробуйте снова.")
+        await message.answer("Кэшер не найден или не является инкассатором. Попробуйте снова.")
     await state.clear()
 
 @dp.message(F.text == "🏦 Добавить админа")
+@role_required(4)
 async def cmd_add_admin(message: types.Message, state: FSMContext):
     await message.answer("Введите имя админа:")
     await state.set_state(CardStates.adding_admin)
@@ -63,7 +68,7 @@ async def process_add_admin(message: types.Message, state: FSMContext):
     db = next(get_db())
     user = db.query(User).filter(User.full_name == admin_name).first()
     if user:
-        user.role = 3  # Устанавливаем роль админа
+        user.role = 3  
         db.commit()
         await message.answer(f"Админ {admin_name} успешно добавлен.")
     else:
@@ -71,6 +76,7 @@ async def process_add_admin(message: types.Message, state: FSMContext):
     await state.clear()
 
 @dp.message(F.text == "🗑 Удалить админа")
+@role_required(4)
 async def cmd_remove_admin(message: types.Message, state: FSMContext):
     await message.answer("Введите имя админа:")
     await state.set_state(CardStates.removing_admin)
@@ -81,7 +87,7 @@ async def process_remove_admin(message: types.Message, state: FSMContext):
     db = next(get_db())
     user = db.query(User).filter(User.full_name == admin_name).first()
     if user and user.role == 3:
-        user.role = 1  # Удаляем роль админа
+        user.role = 1 
         db.commit()
         await message.answer(f"Админ {admin_name} успешно удален.")
     else:
@@ -89,6 +95,7 @@ async def process_remove_admin(message: types.Message, state: FSMContext):
     await state.clear()
 
 @dp.message(F.text == "🔒 Сменить пароль")
+@role_required(4)
 async def cmd_change_pass(message: types.Message, state: FSMContext):
     await message.answer("Введите текущий пароль:")
     await state.set_state(CardStates.changing_password)
@@ -111,5 +118,6 @@ async def process_new_password(message: types.Message, state: FSMContext):
     await state.clear()
 
 @dp.message(F.text == "📊 Действия пользователя")
+@role_required(3)
 async def cmd_user_actions(message: types.Message, state: FSMContext):
     await message.answer("Команда для просмотра действий пользователя.")

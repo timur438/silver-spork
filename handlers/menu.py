@@ -6,6 +6,7 @@ from bot import dp
 from database.db_session import get_db
 from database.models import User, Bank, Card
 from states import CardStates, BankStates
+from decorators import role_required
 
 def parse_amount(amount_str):
     amount_str = amount_str.replace(' ', '').replace('.', '').replace(',', '')
@@ -13,6 +14,7 @@ def parse_amount(amount_str):
     return amount
 
 @dp.message(F.text == "💸 Съём")
+@role_required(2)
 async def cmd_withdraw(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer("Введите последние 4 цифры карты:")
@@ -132,6 +134,7 @@ async def process_remove_card(message: types.Message, state: FSMContext):
     await state.clear()
 
 @dp.message(F.text == "🗑 Удалить все карты")
+@role_required(3)
 async def cmd_remove_all_cards(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer("Подтвердите удаление всех карт (да/нет):")
@@ -187,16 +190,19 @@ async def process_remove_bank(message: types.Message, state: FSMContext):
     await state.clear()
 
 @dp.message(F.text == "💸 Перевод")
+@role_required(3)
 async def cmd_transfer(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer("Команда для перевода средств.")
 
 @dp.message(F.text == "🔄 Обнулить кассу")
+@role_required(3)
 async def cmd_casher_reset(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer("Команда для обнуления кассы.")
 
 @dp.message(F.text == "📊 Статистика")
+@role_required(2)
 async def cmd_info(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer("Команда для отображения статистики.")
