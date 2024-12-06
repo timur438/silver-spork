@@ -26,4 +26,5 @@ class AdminStates(StatesGroup):
     changing_password = State()
     new_password = State()
     user_actions = State()
+    viewing_user_profile = State()
 
