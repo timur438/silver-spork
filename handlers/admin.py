@@ -56,7 +56,7 @@ async def process_add_cashier(message: types.Message, state: FSMContext):
 @dp.message(F.text == "🗑 Удалить кэшера")
 @role_required(3)
 async def cmd_remove_cashier(message: types.Message, state: FSMContext):
-    await message.answer("Введите имя кэшера:")
+    await message.answer("Введите юзернейм кэшера:")
     await state.set_state(AdminStates.removing_cashier)
 
 @dp.message(AdminStates.removing_cashier)
@@ -75,7 +75,7 @@ async def process_remove_cashier(message: types.Message, state: FSMContext):
 @dp.message(F.text == "🏦 Добавить админа")
 @role_required(4)
 async def cmd_add_admin(message: types.Message, state: FSMContext):
-    await message.answer("Введите имя админа:")
+    await message.answer("Введите юзернейм админа:")
     await state.set_state(AdminStates.adding_admin)
 
 @dp.message(AdminStates.adding_admin)
@@ -94,7 +94,7 @@ async def process_add_admin(message: types.Message, state: FSMContext):
 @dp.message(F.text == "🗑 Удалить админа")
 @role_required(4)
 async def cmd_remove_admin(message: types.Message, state: FSMContext):
-    await message.answer("Введите имя админа:")
+    await message.answer("Введите юзернейм админа:")
     await state.set_state(AdminStates.removing_admin)
 
 @dp.message(AdminStates.removing_admin)
@@ -153,3 +153,42 @@ async def process_new_password(message: types.Message, state: FSMContext):
 @role_required(3)
 async def cmd_user_actions(message: types.Message, state: FSMContext):
     await message.answer("Команда для просмотра действий пользователя.")
+
+@dp.message(F.text == "👤 Профиль пользователя")
+@role_required(3) 
+async def cmd_user_profile(message: types.Message, state: FSMContext):
+    await message.answer("Введите юзернейм пользователя для просмотра его профиля:")
+    await state.set_state(AdminStates.viewing_user_profile)
+
+
+@dp.message(AdminStates.viewing_user_profile)
+async def process_user_profile(message: types.Message, state: FSMContext):
+    username = message.text
+    db = next(get_db())
+    
+    user = db.query(User).filter(User.username == username).first()
+    
+    if user:
+        profile_info = (
+            f"👤 **Профиль пользователя:**\n"
+            f"📌 **ID:** {user.id}\n"
+            f"📛 **Юзернейм:** @{user.username}\n"
+            f"📝 **Полное имя:** {user.full_name if user.full_name else 'Не указано'}\n"
+            f"🔑 **Роль:** {user.role} ({get_role_name(user.role)})\n"
+            f"💰 **Баланс:** {user.balance:.2f} 💵"
+        )
+        await message.answer(profile_info, parse_mode="Markdown")
+    else:
+        await message.answer("Пользователь не найден. Убедитесь, что юзернейм указан правильно.")
+    
+    await state.clear()
+
+
+def get_role_name(role: int) -> str:
+    role_names = {
+        1: "Пользователь",
+        2: "Кэшер",
+        3: "Админ",
+        4: "Суперадмин"
+    }
+    return role_names.get(role, "Неизвестная роль")
