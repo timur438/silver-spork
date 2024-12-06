@@ -17,3 +17,13 @@ class BankStates(StatesGroup):
     adding_bank_name = State()
     removing_bank_name = State()
     checking_bank_name = State()
+
+class AdminStates:
+    adding_cashier = State() 
+    removing_cashier = State() 
+    adding_admin = State() 
+    removing_admin = State() 
+    changing_password = State()
+    new_password = State()
+    user_actions = State()
+

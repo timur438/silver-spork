@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from bot import bot, dp
-from handlers import start, menu
+from handlers import start, menu, admin
 from database.init_db import init_db
 
 async def main():

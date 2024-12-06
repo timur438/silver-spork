@@ -1,1 +1,1 @@
-from . import start, menu#, admin
+from . import start, menu, admin
