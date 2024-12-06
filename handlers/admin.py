@@ -7,42 +7,44 @@ from keyboards.admin_keyboards import role_3_admin_keyboard, role_4_admin_keyboa
 from keyboards.menu_keyboards import role_3_keyboard, role_4_keyboard
 from states import AdminStates
 from decorators import role_required
+from database.models import AdminSettings
+from utils.password_utils import hash_password, verify_password
 
 @dp.message(F.text == "🛠️ Админ панель")
 @role_required(3)
 async def cmd_admin_panel(message: types.Message, state: FSMContext):
     await state.clear()
     db = next(get_db())
-    user = db.query(User).filter(User.id == message.from_user.id).first()
+    user = db.query(User).filter(User.username == message.from_user.username).first()
 
     if user.role == 3:
-        await message.answer(reply_markup=role_3_admin_keyboard)
+        await message.answer("Панель администратора", reply_markup=role_3_admin_keyboard)
     elif user.role == 4:
-        await message.answer(reply_markup=role_4_admin_keyboard)
+        await message.answer("Панель администратора", reply_markup=role_4_admin_keyboard)
 
 @dp.message(F.text == "🔙 Назад")
 async def cmd_back(message: types.Message, state: FSMContext):
     db = next(get_db())
-    user = db.query(User).filter(User.id == message.from_user.id).first()
+    user = db.query(User).filter(User.username == message.from_user.username).first()
 
     if user.role == 3:
-        await message.answer("Выберите команду:", reply_markup=role_3_keyboard) 
+        await message.answer("Общее меню", reply_markup=role_3_keyboard) 
     elif user.role == 4:
-        await message.answer("Выберите команду:", reply_markup=role_4_keyboard) 
+        await message.answer("Общее меню", reply_markup=role_4_keyboard) 
     
     await state.clear()
 
 @dp.message(F.text == "💳 Добавить кэшера")
 @role_required(3)
 async def cmd_add_cashier(message: types.Message, state: FSMContext):
-    await message.answer("Введите имя кэшера:")
+    await message.answer("Введите юзернейм кэшера:")
     await state.set_state(AdminStates.adding_cashier)
 
 @dp.message(AdminStates.adding_cashier)
 async def process_add_cashier(message: types.Message, state: FSMContext):
     cashier_name = message.text
     db = next(get_db())
-    user = db.query(User).filter(User.full_name == cashier_name).first()
+    user = db.query(User).filter(User.username == cashier_name).first()
     if user:
         user.role = 2 
         db.commit()
@@ -61,7 +63,7 @@ async def cmd_remove_cashier(message: types.Message, state: FSMContext):
 async def process_remove_cashier(message: types.Message, state: FSMContext):
     cashier_name = message.text
     db = next(get_db())
-    user = db.query(User).filter(User.full_name == cashier_name).first()
+    user = db.query(User).filter(User.username == cashier_name).first()
     if user and user.role == 2:
         user.role = 1 
         db.commit()
@@ -80,7 +82,7 @@ async def cmd_add_admin(message: types.Message, state: FSMContext):
 async def process_add_admin(message: types.Message, state: FSMContext):
     admin_name = message.text
     db = next(get_db())
-    user = db.query(User).filter(User.full_name == admin_name).first()
+    user = db.query(User).filter(User.username == admin_name).first()
     if user:
         user.role = 3  
         db.commit()
@@ -99,7 +101,7 @@ async def cmd_remove_admin(message: types.Message, state: FSMContext):
 async def process_remove_admin(message: types.Message, state: FSMContext):
     admin_name = message.text
     db = next(get_db())
-    user = db.query(User).filter(User.full_name == admin_name).first()
+    user = db.query(User).filter(User.username == admin_name).first()
     if user and user.role == 3:
         user.role = 1 
         db.commit()
@@ -116,8 +118,15 @@ async def cmd_change_pass(message: types.Message, state: FSMContext):
 
 @dp.message(AdminStates.changing_password)
 async def process_change_pass(message: types.Message, state: FSMContext):
+    db = next(get_db())
     current_password = message.text
-    if current_password == "your_secret_password":  # Замените на ваш текущий пароль
+
+    admin_settings = db.query(AdminSettings).first()
+    if not admin_settings:
+        await message.answer("Ошибка: настройки администратора не найдены.")
+        return
+
+    if verify_password(current_password, admin_settings.hashed_password):
         await message.answer("Введите новый пароль:")
         await state.set_state(AdminStates.new_password)
     else:
@@ -127,9 +136,18 @@ async def process_change_pass(message: types.Message, state: FSMContext):
 @dp.message(AdminStates.new_password)
 async def process_new_password(message: types.Message, state: FSMContext):
     new_password = message.text
-    # Здесь можно добавить логику для сохранения нового пароля
-    await message.answer(f"Пароль успешно изменен.")
+
+    db = next(get_db())
+    admin_settings = db.query(AdminSettings).first()
+    if admin_settings:
+        admin_settings.hashed_password = hash_password(new_password)
+        db.commit()
+        await message.answer("Пароль успешно изменен.")
+    else:
+        await message.answer("Ошибка: настройки администратора не найдены.")
+    
     await state.clear()
+
 
 @dp.message(F.text == "📊 Действия пользователя")
 @role_required(3)

@@ -3,6 +3,12 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String
 from .db_session import Base
 
+class AdminSettings(Base):
+    __tablename__ = "admin_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    hashed_password = Column(String, nullable=False)
+
 class User(Base):
     __tablename__ = 'users'
 

@@ -9,3 +9,4 @@ database/__pycache__/
 handlers/__pycache__/
 states/__pycache__/
 keyboards/__pycache__/
+utils/__pycache__/

@@ -18,7 +18,7 @@ class BankStates(StatesGroup):
     removing_bank_name = State()
     checking_bank_name = State()
 
-class AdminStates:
+class AdminStates(StatesGroup):
     adding_cashier = State() 
     removing_cashier = State() 
     adding_admin = State() 

@@ -1,1 +1,1 @@
-from .states import AuthStates, CardStates, BankStates
+from .states import AuthStates, CardStates, BankStates, AdminStates
