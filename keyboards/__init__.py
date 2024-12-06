@@ -1,1 +1,1 @@
-from . import menu_keyboards
+from . import menu_keyboards, admin_keyboards

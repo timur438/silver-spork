@@ -10,6 +10,7 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     full_name = Column(String)
     role = Column(Integer, default=1) 
+    balance = Column(Float, default=0.0)
 
 class Bank(Base):
     __tablename__ = 'banks'
@@ -23,11 +24,11 @@ class Card(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     bank_id = Column(Integer, ForeignKey('banks.id'))
+    bank_name = Column(String)
     last_four_digits = Column(String, index=True)
     daily_limit = Column(Float)
     remaining_limit = Column(Float)
     added_by = Column(String)
-    bank_name = Column(String)
 
     bank = relationship("Bank")
 
