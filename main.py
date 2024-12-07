@@ -7,7 +7,6 @@ from database.db_session import get_db
 from database.models import AdminSettings
 from utils.password_utils import hash_password
 from utils.config_reader import config
-from utils.scheduler import start_scheduler
 
 def initialize_admin_password():
     db = next(get_db())
@@ -21,7 +20,6 @@ def initialize_admin_password():
 async def main():
     init_db() 
     initialize_admin_password()
-    start_scheduler()
     await dp.start_polling(bot)
 
 if __name__ == "__main__":

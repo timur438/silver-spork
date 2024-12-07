@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String
 from .db_session import Base
@@ -37,4 +37,12 @@ class Card(Base):
     added_by = Column(String)
 
     bank = relationship("Bank")
+
+class Blacklist(Base):
+    __tablename__ = 'blacklist'
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    blocked_at = Column(Integer)
+    is_blocked = Column(Boolean, default=True)
 

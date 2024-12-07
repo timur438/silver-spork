@@ -354,5 +354,31 @@ async def cmd_statistics(message: types.Message, state: FSMContext):
 
     await message.answer(f"📊 Ваша статистика:\n\n```\n{table}\n```", parse_mode="Markdown")
 
+@dp.message(F.text == "👤 Мой профиль") 
+@role_required(1)
+async def cmd_my_profile(message: types.Message):
+    db = next(get_db())
+    user = db.query(User).filter(User.username == message.from_user.username).first()
 
+    if user:
+        profile_info = (
+            f"👤 **Профиль:**\n"
+            f"📌 **ID:** {user.id}\n"
+            f"📛 **Юзернейм:** @{user.username}\n"
+            f"📝 **Полное имя:** {user.full_name if user.full_name else 'Не указано'}\n"
+            f"🔑 **Роль:** {user.role} ({get_role_name(user.role)})\n"
+            f"💰 **Баланс:** {user.balance:.2f} 💵"
+        )
+        await message.answer(profile_info, parse_mode="HTML")
+    else:
+        await message.answer("Ошибка: Ваш профиль не найден в базе данных.")
+
+def get_role_name(role_id):
+    roles = {
+        1: "Пользователь",
+        2: "Кэшер",
+        3: "Администратор",
+        4: "Суперадмин",
+    }
+    return roles.get(role_id, "Неизвестная роль")
 

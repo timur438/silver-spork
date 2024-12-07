@@ -27,4 +27,9 @@ class AdminStates(StatesGroup):
     new_password = State()
     user_actions = State()
     viewing_user_profile = State()
+    resetting_balance = State()
+    confirm_removal = State()
+    blocking_user = State()
+    confirm_reset_balance = State()
+    resetting_partial_balance = State()
 

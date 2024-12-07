@@ -3,4 +3,3 @@ aiogram
 bcrypt
 pydantic
 pydantic_settings
-apscheduler

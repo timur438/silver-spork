@@ -3,7 +3,7 @@ from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from bot import dp
 from database.db_session import get_db
-from database.models import User, AdminSettings
+from database.models import User, AdminSettings, Blacklist
 from states import AuthStates
 from utils.config_reader import config
 from keyboards.menu_keyboards import role_1_keyboard, role_2_keyboard, role_3_keyboard, role_4_keyboard
@@ -13,6 +13,12 @@ from utils.password_utils import verify_password
 async def cmd_start(message: types.Message, state: FSMContext):
     db = next(get_db())
     user = db.query(User).filter(User.username == message.from_user.username).first()
+
+    blacklisted_user = db.query(Blacklist).filter(Blacklist.username == message.from_user.username).first()
+    if blacklisted_user:
+        await message.answer("Вы заблокированы. Обратитесь к администратору для получения разъяснений.")
+        await state.clear()
+        return
     
     if user:
         if user.role == 1:
@@ -31,9 +37,15 @@ async def cmd_start(message: types.Message, state: FSMContext):
 async def process_password(message: types.Message, state: FSMContext):
     db = next(get_db())
     admin_settings = db.query(AdminSettings).first()
+
+    blacklisted_user = db.query(Blacklist).filter(Blacklist.username == message.from_user.username).first()
+    if blacklisted_user:
+        await message.answer("Вы заблокированы. Обратитесь к администратору для получения разъяснений.")
+        await state.clear()
+        return
     
     if not admin_settings or not admin_settings.hashed_password:
-        await message.answer("Настройки администратора не найдены. Обратитесь к разработчику.")
+        await message.answer("Пароль не распознан. Обратитесь к разработчику.")
         await state.clear()
         return
 
