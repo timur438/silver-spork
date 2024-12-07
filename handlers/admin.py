@@ -24,7 +24,6 @@ def get_users_keyboard(role: int) -> InlineKeyboardMarkup:
 
     return keyboard
 
-# Команды админ панели
 @dp.message(F.text == "🛠️ Админ панель")
 @role_required(3)
 async def cmd_admin_panel(message: types.Message, state: FSMContext):

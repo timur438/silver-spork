@@ -327,7 +327,7 @@ async def process_transfer_amount(message: types.Message, state: FSMContext):
         await message.answer("Пожалуйста, введите корректную сумму.")
 
 @dp.message(F.text == "📊 Статистика")
-@role_required(2)
+@role_required(1)
 async def cmd_statistics(message: types.Message, state: FSMContext):
     await state.clear()
     db = next(get_db())
