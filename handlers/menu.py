@@ -331,7 +331,7 @@ async def process_transfer_amount(message: types.Message, state: FSMContext):
 async def cmd_statistics(message: types.Message, state: FSMContext):
     await state.clear()
     db = next(get_db())
-    cards = db.query(Card).filter(Card.added_by == message.from_user.username).all()
+    cards = db.query(Card).all()
 
     if not cards:
         await message.answer("У вас нет добавленных карт.")
