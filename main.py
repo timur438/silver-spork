@@ -12,7 +12,7 @@ def initialize_admin_password():
     db = next(get_db())
     admin_settings = db.query(AdminSettings).first()
     if not admin_settings:
-        hashed_password = hash_password(config.password())
+        hashed_password = hash_password(config.password)
         admin_settings = AdminSettings(hashed_password=hashed_password)
         db.add(admin_settings)
         db.commit()
