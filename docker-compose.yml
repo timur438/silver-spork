@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  app:
+    image: peoplexbot:latest
+    build:
+      context: .  
+      dockerfile: Dockerfile
+    container_name: app_container
+    volumes:
+      - .:/app  
+    environment:
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    ports:
+      - "8000:8000"
+    command: python main.py 
