@@ -5,7 +5,7 @@ from bot import dp
 from database.db_session import get_db
 from database.models import User, AdminSettings
 from states import AuthStates
-from config_reader import config
+from utils.config_reader import config
 from keyboards.menu_keyboards import role_1_keyboard, role_2_keyboard, role_3_keyboard, role_4_keyboard
 from utils.password_utils import verify_password
 

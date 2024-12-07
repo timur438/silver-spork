@@ -1,6 +1,6 @@
 import logging
 from aiogram import Bot, Dispatcher
-from config_reader import config
+from utils.config_reader import config
 
 logging.basicConfig(level=logging.INFO)
 

@@ -6,7 +6,7 @@ from database.models import User, Bank, Card
 from keyboards.admin_keyboards import role_3_admin_keyboard, role_4_admin_keyboard
 from keyboards.menu_keyboards import role_3_keyboard, role_4_keyboard
 from states import AdminStates
-from decorators import role_required
+from utils.decorators import role_required
 from database.models import AdminSettings
 from utils.password_utils import hash_password, verify_password
 

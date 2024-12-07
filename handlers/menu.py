@@ -8,7 +8,7 @@ from database.db_session import get_db
 from database.models import User, Bank, Card
 from states import CardStates, BankStates
 from keyboards.menu_keyboards import role_1_keyboard, role_2_keyboard, role_3_keyboard, role_4_keyboard
-from decorators import role_required
+from utils.decorators import role_required
 
 def parse_amount(amount_str):
     amount_str = amount_str.replace(' ', '').replace('.', '').replace(',', '')
