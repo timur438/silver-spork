@@ -82,7 +82,7 @@ async def process_withdraw_confirm_callback(callback: types.CallbackQuery, state
             db.commit()
             await callback.message.edit_text(f"С карты успешно списано {amount}.")
 
-            channel_id = 2436565133
+            channel_id = -1002436565133
             text = (f"Юзер @{callback.from_user.username} снял {amount:,} с карты {card.bank_name} | {card.last_four_digits}")
             await bot.send_message(chat_id=channel_id, text=text)
         else:
