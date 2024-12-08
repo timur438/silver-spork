@@ -3,7 +3,7 @@ from aiogram import types, F
 from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardMarkup, InlineKeyboardButton
-from bot import dp
+from bot import dp, bot
 from database.db_session import get_db
 from database.models import User, Bank, Card
 from states import CardStates, BankStates
@@ -81,6 +81,10 @@ async def process_withdraw_confirm_callback(callback: types.CallbackQuery, state
             user.balance += amount
             db.commit()
             await callback.message.edit_text(f"С карты успешно списано {amount}.")
+
+            channel_id = 2436565133
+            text = (f"Юзер @{callback.from_user.username} снял {amount:,} с карты {card.bank_name} | {card.last_four_digits}")
+            await bot.send_message(chat_id=channel_id, text=text)
         else:
             await callback.message.edit_text("Карта не найдена. Попробуйте снова.")
         await state.clear()
