@@ -20,7 +20,7 @@ def parse_amount(amount_str):
 async def cmd_withdraw(message: types.Message, state: FSMContext):
     await state.clear()
     db = next(get_db())
-    cards = db.query(Card).filter(Card.added_by == message.from_user.username).all()
+    cards = db.query(Card).all()
     if not cards:
         await message.answer("У вас нет добавленных карт.")
         return
@@ -160,7 +160,13 @@ async def process_daily_limit(message: types.Message, state: FSMContext):
 async def cmd_remove_card(message: types.Message, state: FSMContext):
     await state.clear()
     db = next(get_db())
-    cards = db.query(Card).filter(Card.added_by == message.from_user.username).all()
+    user = db.query(User).filter(User.username == message.from_user.username).first()
+
+    if user.role > 1:
+        cards = db.query(Card).all()
+    else:
+        cards = db.query(Card).filter(Card.added_by == message.from_user.username).all()
+
     if not cards:
         await message.answer("У вас нет добавленных карт.")
         return
@@ -234,7 +240,13 @@ async def process_check_bank(message: types.Message, state: FSMContext):
 async def cmd_remove_bank(message: types.Message, state: FSMContext):
     await state.clear()
     db = next(get_db())
-    banks = db.query(Bank).filter(Bank.added_by == message.from_user.username).all()
+    user = db.query(User).filter(User.username == message.from_user.username).first()
+
+    if user.role > 1:
+        banks = db.query(Bank).all()
+    else:
+        banks = db.query(Bank).filter(Bank.added_by == message.from_user.username).all()
+    
     if not banks:
         await message.answer("У вас нет добавленных банков.")
         return
