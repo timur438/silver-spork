@@ -204,7 +204,7 @@ async def process_user_profile(message: types.Message, state: FSMContext):
     user = db.query(User).filter(User.username == username).first()
     
     if user:
-        balance = f"{user.balance:,}".replace(",", " ")
+        balance = " ".join(reversed([str(user.balance)[::-1][i:i+3] for i in range(0, len(str(user.balance)), 3)]))[::-1]
         
         roles = {
             1: "Пользователь",
