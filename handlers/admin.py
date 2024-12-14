@@ -49,55 +49,55 @@ async def cmd_back(message: types.Message, state: FSMContext):
     
     await state.clear()
 
-
-# Добавление кэшера
 @dp.message(F.text == "💳 Добавить кэшера")
 @role_required(3)
 async def cmd_add_cashier(message: types.Message, state: FSMContext):
-    await message.answer("Введите юзернейм кэшера, которого хотите добавить:")
+    await message.answer("Выберите пользователя, которого хотите назначить кэшером:", reply_markup=get_users_keyboard(1))
     await state.set_state(AdminStates.adding_cashier)
 
 
-@dp.message(AdminStates.adding_cashier)
-async def process_add_cashier(message: types.Message, state: FSMContext):
-    cashier_name = message.text
+@dp.callback_query(AdminStates.adding_cashier)
+async def process_add_cashier_callback(callback_query: types.CallbackQuery, state: FSMContext):
+    username = callback_query.data.split("_")[1]
     db = next(get_db())
-    user = db.query(User).filter(User.username == cashier_name).first()
+    user = db.query(User).filter(User.username == username).first()
 
     if user:
-        if user.role >= 2: 
-            await message.answer("Невозможно добавить пользователя с более высокой ролью.")
+        if user.role >= 2:
+            await callback_query.message.answer("Невозможно добавить пользователя с более высокой ролью.")
         else:
-            user.role = 2 
+            user.role = 2
             db.commit()
-            await message.answer(f"Кэшер {cashier_name} успешно добавлен.")
+            await callback_query.message.answer(f"Кэшер @{username} успешно добавлен.")
     else:
-        await message.answer("Пользователь не найден. Попробуйте снова.")
+        await callback_query.message.answer("Пользователь не найден.")
     await state.clear()
+
 
 @dp.message(F.text == "🏦 Добавить админа")
 @role_required(4)
 async def cmd_add_admin(message: types.Message, state: FSMContext):
-    await message.answer("Введите юзернейм админа, которого хотите добавить:")
+    await message.answer("Выберите пользователя, которого хотите назначить админом:", reply_markup=get_users_keyboard(2))
     await state.set_state(AdminStates.adding_admin)
 
 
-@dp.message(AdminStates.adding_admin)
-async def process_add_admin(message: types.Message, state: FSMContext):
-    admin_name = message.text
+@dp.callback_query(AdminStates.adding_admin)
+async def process_add_admin_callback(callback_query: types.CallbackQuery, state: FSMContext):
+    username = callback_query.data.split("_")[1]
     db = next(get_db())
-    user = db.query(User).filter(User.username == admin_name).first()
+    user = db.query(User).filter(User.username == username).first()
 
     if user:
         if user.role >= 3:
-            await message.answer("Невозможно добавить пользователя с более высокой ролью.")
+            await callback_query.message.answer("Невозможно добавить пользователя с более высокой ролью.")
         else:
             user.role = 3
             db.commit()
-            await message.answer(f"Админ {admin_name} успешно добавлен.")
+            await callback_query.message.answer(f"Админ @{username} успешно добавлен.")
     else:
-        await message.answer("Пользователь не найден. Попробуйте снова.")
+        await callback_query.message.answer("Пользователь не найден.")
     await state.clear()
+
 
 @dp.message(F.text == "🗑 Удалить админа")
 @role_required(4)
@@ -107,7 +107,7 @@ async def cmd_remove_admin(message: types.Message, state: FSMContext):
 
 
 @dp.callback_query(AdminStates.removing_admin)
-async def process_remove_admin(callback_query: types.CallbackQuery, state: FSMContext):
+async def process_remove_admin_callback(callback_query: types.CallbackQuery, state: FSMContext):
     username = callback_query.data.split("_")[1]
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
@@ -123,7 +123,7 @@ async def process_remove_admin(callback_query: types.CallbackQuery, state: FSMCo
         )
     else:
         await callback_query.message.answer("Этот пользователь не является администратором.")
-    await state.set_state(AdminStates.confirm_removal)
+    await state.clear()
 
 
 @dp.callback_query(AdminStates.confirm_removal)
