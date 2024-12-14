@@ -189,12 +189,24 @@ async def process_new_password(message: types.Message, state: FSMContext):
     
     await state.clear()
 
+def get_view_users_keyboard(role: int) -> InlineKeyboardMarkup:
+    """
+    Генерирует инлайн-клавиатуру с пользователями, чья роль равна или меньше указанной.
+    """
+    db = next(get_db())
+    users = db.query(User).filter(User.role <= role).all()
+    keyboard = [
+        [InlineKeyboardButton(text=f"@{user.username}", callback_data=f"view_user_{user.username}")]
+        for user in users
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
 @dp.message(F.text == "👤 Профиль пользователя")
 @role_required(3)
 async def cmd_user_profile(message: types.Message, state: FSMContext):
     await message.answer(
         "Выберите пользователя для просмотра профиля или введите юзернейм:",
-        reply_markup=get_users_keyboard(4)
+        reply_markup=get_users_keyboard()
     )
     await state.set_state(AdminStates.viewing_user_profile)
 
