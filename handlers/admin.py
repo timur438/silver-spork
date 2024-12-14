@@ -192,7 +192,7 @@ async def process_new_password(message: types.Message, state: FSMContext):
 @dp.message(F.text == "👤 Профиль пользователя")
 @role_required(3) 
 async def cmd_user_profile(message: types.Message, state: FSMContext):
-    await message.answer("Введите юзернейм пользователя для просмотра его профиля:")
+    await message.answer("Введите юзернейм пользователя для просмотра его профиля:", reply_markup=get_users_keyboard(4))
     await state.set_state(AdminStates.viewing_user_profile)
 
 
