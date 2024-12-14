@@ -184,8 +184,9 @@ async def process_remove_card_callback(callback: types.CallbackQuery, state: FSM
     last_four_digits = callback.data.split("_")[2]
     db = next(get_db())
     card = db.query(Card).filter(Card.last_four_digits == last_four_digits).first()
+    user = db.query(User).filter(User.username == callback.from_user.username).first()
     if card:
-        if callback.from_user.username == card.added_by or callback.from_user.role >= 3:
+        if callback.from_user.username == card.added_by or user.role >= 2:
             db.delete(card)
             db.commit()
             await callback.message.edit_text("Карта успешно удалена.")
@@ -264,8 +265,10 @@ async def process_remove_bank_callback(callback: types.CallbackQuery, state: FSM
     bank_name = callback.data.split("_")[2]
     db = next(get_db())
     bank = db.query(Bank).filter(Bank.name == bank_name).first()
+    user = db.query(User).filter(User.username == callback.from_user.username).first()
+
     if bank:
-        if callback.from_user.username == bank.added_by or callback.from_user.role >= 3:
+        if callback.from_user.username == bank.added_by or user.role >= 2:
             db.delete(bank)
             db.commit()
             await callback.message.edit_text("Банк успешно удален.")
