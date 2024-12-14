@@ -189,22 +189,12 @@ async def process_new_password(message: types.Message, state: FSMContext):
     
     await state.clear()
 
-def get_users_keyboard():
-    db = next(get_db())
-    users = db.query(User).all()
-    keyboard = InlineKeyboardMarkup(row_width=1)
-    
-    for user in users:
-        keyboard.add(InlineKeyboardButton(text=f"@{user.username}", callback_data=f"view_user_{user.username}"))
-    
-    return keyboard
-
 @dp.message(F.text == "👤 Профиль пользователя")
 @role_required(3)
 async def cmd_user_profile(message: types.Message, state: FSMContext):
     await message.answer(
         "Выберите пользователя для просмотра профиля или введите юзернейм:",
-        reply_markup=get_users_keyboard()
+        reply_markup=get_users_keyboard(4)
     )
     await state.set_state(AdminStates.viewing_user_profile)
 
@@ -263,7 +253,7 @@ async def process_user_profile(message: types.Message, state: FSMContext):
         await message.answer(f"Пользователь @{username} не найден.")
     
     await state.clear()
-    
+
 @dp.message(F.text == "🚫 Заблокировать пользователя")
 @role_required(4)  
 async def cmd_block_user(message: types.Message, state: FSMContext):
