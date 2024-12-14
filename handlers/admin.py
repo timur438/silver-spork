@@ -13,15 +13,14 @@ from database.models import AdminSettings
 from utils.password_utils import hash_password, verify_password
 
 def get_users_keyboard(role: int) -> InlineKeyboardMarkup:
+    """
+    Генерирует инлайн-клавиатуру с пользователями, чья роль равна или меньше указанной.
+    """
     db = next(get_db())
-    users = db.query(User).filter(User.role == role).all()
-
-    buttons = []
+    users = db.query(User).filter(User.role <= role).all()
+    keyboard = InlineKeyboardMarkup(row_width=1)
     for user in users:
-        buttons.append(InlineKeyboardButton(text=f"@{user.username}", callback_data=f"user_{user.username}"))
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[buttons], row_width=1)
-
+        keyboard.add(InlineKeyboardButton(text=f"@{user.username}", callback_data=f"user_{user.username}"))
     return keyboard
 
 @dp.message(F.text == "🛠️ Админ панель")
