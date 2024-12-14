@@ -58,7 +58,8 @@ async def cmd_add_cashier(message: types.Message, state: FSMContext):
 
 @dp.callback_query(AdminStates.adding_cashier)
 async def process_add_cashier_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    username = callback_query.data.split("_")[1]
+    username_data = callback_query.data.split("_")[1]
+    username = username_data.text.lstrip("@")
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
 
@@ -83,7 +84,8 @@ async def cmd_add_admin(message: types.Message, state: FSMContext):
 
 @dp.callback_query(AdminStates.adding_admin)
 async def process_add_admin_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    username = callback_query.data.split("_")[1]
+    username_data = callback_query.data.split("_")[1]
+    username = username_data.text.lstrip("@")
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
 
@@ -108,7 +110,8 @@ async def cmd_remove_admin(message: types.Message, state: FSMContext):
 
 @dp.callback_query(AdminStates.removing_admin)
 async def process_remove_admin_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    username = callback_query.data.split("_")[1]
+    username_data = callback_query.data.split("_")[1]
+    username = username_data.text.lstrip("@")
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
 
@@ -195,13 +198,27 @@ async def cmd_user_profile(message: types.Message, state: FSMContext):
 
 @dp.message(AdminStates.viewing_user_profile)
 async def process_user_profile(message: types.Message, state: FSMContext):
-    username = message.text
+    username = message.text.lstrip("@")
     db = next(get_db())
     
     user = db.query(User).filter(User.username == username).first()
     
     if user:
-        await message.answer(f"Профиль пользователя @{user.username}\nБаланс: {user.balance}")
+        balance = f"{user.balance:,}".replace(",", " ")
+        
+        roles = {
+            1: "Пользователь",
+            2: "Кэшер",
+            3: "Администратор",
+            4: "Суперадминистратор"
+        }
+        role_name = roles.get(user.role, "Неизвестная роль")
+        
+        await message.answer(
+            f"👤 Профиль пользователя: @{user.username}\n"
+            f"💰 Баланс: {balance}\n"
+            f"🔑 Роль: {role_name}"
+        )
     else:
         await message.answer(f"Пользователь @{username} не найден.")
     
@@ -287,7 +304,7 @@ async def cmd_reset_balance(message: types.Message, state: FSMContext):
 
 @dp.message(AdminStates.resetting_balance)
 async def process_reset_balance(message: types.Message, state: FSMContext):
-    username = message.text
+    username = message.text.lstrip("@")
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
 
