@@ -206,7 +206,7 @@ def get_view_users_keyboard(role: int) -> InlineKeyboardMarkup:
 async def cmd_user_profile(message: types.Message, state: FSMContext):
     await message.answer(
         "Выберите пользователя для просмотра профиля или введите юзернейм:",
-        reply_markup=get_users_keyboard()
+        reply_markup=get_users_keyboard(4)
     )
     await state.set_state(AdminStates.viewing_user_profile)
 
