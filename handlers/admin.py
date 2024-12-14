@@ -294,7 +294,7 @@ async def process_reset_balance(message: types.Message, state: FSMContext):
     if user:
         admin_user = db.query(User).filter(User.username == message.from_user.username).first()
         
-        if admin_user.role >= user.role:
+        if admin_user.role >= user.role and message.from_user.username != username:
             await message.answer("Вы не можете обнулить баланс у пользователя с такой же или более высокой ролью.")
             await state.clear()
             return
