@@ -189,12 +189,52 @@ async def process_new_password(message: types.Message, state: FSMContext):
     
     await state.clear()
 
+def get_users_keyboard():
+    db = next(get_db())
+    users = db.query(User).all()
+    keyboard = InlineKeyboardMarkup(row_width=1)
+    
+    for user in users:
+        keyboard.add(InlineKeyboardButton(text=f"@{user.username}", callback_data=f"view_user_{user.username}"))
+    
+    return keyboard
+
 @dp.message(F.text == "👤 Профиль пользователя")
-@role_required(3) 
+@role_required(3)
 async def cmd_user_profile(message: types.Message, state: FSMContext):
-    await message.answer("Введите юзернейм пользователя для просмотра его профиля:", reply_markup=get_users_keyboard(4))
+    await message.answer(
+        "Выберите пользователя для просмотра профиля или введите юзернейм:",
+        reply_markup=get_users_keyboard()
+    )
     await state.set_state(AdminStates.viewing_user_profile)
 
+@dp.callback_query(F.data.startswith("view_user_"))
+async def process_user_profile_callback(callback_query: types.CallbackQuery, state: FSMContext):
+    username = callback_query.data.split("_")[2]
+    db = next(get_db())
+    
+    user = db.query(User).filter(User.username == username).first()
+    
+    if user:
+        balance = " ".join(reversed([str(user.balance)[::-1][i:i+3] for i in range(0, len(str(user.balance)), 3)]))[::-1]
+        
+        roles = {
+            1: "Пользователь",
+            2: "Кэшер",
+            3: "Администратор",
+            4: "Суперадминистратор"
+        }
+        role_name = roles.get(user.role, "Неизвестная роль")
+        
+        await callback_query.message.answer(
+            f"👤 Профиль пользователя: @{user.username}\n"
+            f"💰 Баланс: {balance}\n"
+            f"🔑 Роль: {role_name}"
+        )
+    else:
+        await callback_query.message.answer("Пользователь не найден.")
+    
+    await callback_query.answer() 
 
 @dp.message(AdminStates.viewing_user_profile)
 async def process_user_profile(message: types.Message, state: FSMContext):
@@ -223,7 +263,7 @@ async def process_user_profile(message: types.Message, state: FSMContext):
         await message.answer(f"Пользователь @{username} не найден.")
     
     await state.clear()
-
+    
 @dp.message(F.text == "🚫 Заблокировать пользователя")
 @role_required(4)  
 async def cmd_block_user(message: types.Message, state: FSMContext):
