@@ -18,10 +18,11 @@ def get_users_keyboard(role: int) -> InlineKeyboardMarkup:
     """
     db = next(get_db())
     users = db.query(User).filter(User.role <= role).all()
-    keyboard = InlineKeyboardMarkup(row_width=1)
-    for user in users:
-        keyboard.add(InlineKeyboardButton(text=f"@{user.username}", callback_data=f"user_{user.username}"))
-    return keyboard
+    keyboard = [
+        [InlineKeyboardButton(text=f"@{user.username}", callback_data=f"user_{user.username}")]
+        for user in users
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 @dp.message(F.text == "🛠️ Админ панель")
 @role_required(3)
