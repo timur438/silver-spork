@@ -354,9 +354,12 @@ async def cmd_reset_balance(message: types.Message, state: FSMContext):
         await message.answer("Нет пользователей с доступной для вас ролью для обнуления баланса.")
         return
 
-    keyboard = InlineKeyboardMarkup()
-    for user in eligible_users:
-        keyboard.add(InlineKeyboardButton(text=f"@{user.username} (Баланс: {user.balance})", callback_data=f"select_user_{user.id}"))
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=f"@{user.username} (Баланс: {user.balance})", callback_data=f"select_user_{user.id}")]
+            for user in eligible_users
+        ]
+    )
 
     await message.answer("Выберите пользователя, чей баланс нужно обнулить:", reply_markup=keyboard)
     await state.set_state(AdminStates.selecting_user)
