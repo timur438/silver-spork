@@ -24,6 +24,9 @@ def get_users_keyboard(role: int) -> InlineKeyboardMarkup:
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
+def format_balance(balance):
+    return f"{balance:,.0f}".replace(",", " ")
+
 @dp.message(F.text == "🛠️ Админ панель")
 @role_required(3)
 async def cmd_admin_panel(message: types.Message, state: FSMContext):
@@ -212,14 +215,12 @@ async def cmd_user_profile(message: types.Message, state: FSMContext):
 
 @dp.callback_query(F.data.startswith("view_user_"))
 async def process_user_profile_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    username = callback_query.data.split("_")[2]
+    username = callback_query.data.removeprefix("view_user_")
     db = next(get_db())
     
     user = db.query(User).filter(User.username == username).first()
     
     if user:
-        balance = " ".join(reversed([str(user.balance)[::-1][i:i+3] for i in range(0, len(str(user.balance)), 3)]))[::-1]
-        
         roles = {
             1: "Пользователь",
             2: "Кэшер",
@@ -230,13 +231,13 @@ async def process_user_profile_callback(callback_query: types.CallbackQuery, sta
         
         await callback_query.message.answer(
             f"👤 Профиль пользователя: @{user.username}\n"
-            f"💰 Баланс: {balance}\n"
+            f"💰 Баланс: {format_balance(user.balance)}\n"
             f"🔑 Роль: {role_name}"
         )
     else:
         await callback_query.message.answer("Пользователь не найден.")
     
-    await callback_query.answer() 
+    await callback_query.answer()
 
 @dp.message(AdminStates.viewing_user_profile)
 async def process_user_profile(message: types.Message, state: FSMContext):
@@ -338,8 +339,6 @@ async def cancel_block(callback_query: types.CallbackQuery, state: FSMContext):
     await callback_query.answer("Операция отменена.")
     await state.clear()
 
-def format_balance(balance):
-    return f"{balance:,.0f}".replace(",", " ")
 
 @dp.message(F.text == "⚡ Обнулить баланс")
 @role_required(3)
