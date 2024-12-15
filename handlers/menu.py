@@ -86,7 +86,7 @@ async def process_withdraw_confirm_callback(callback: types.CallbackQuery, state
             text = (
                 f"Юзер @{callback.from_user.username} снял {amount:,} с карты {card.bank_name} | {card.last_four_digits}\n"
                 f"Оставшийся лимит карты: {card.remaining_limit:,}\n"
-                f"Текущий баланс пользователя: {user.balance:,}"
+                f"Текущий баланс юзера: {user.balance:,}"
             )
             await bot.send_message(chat_id=channel_id, text=text)
         else:
