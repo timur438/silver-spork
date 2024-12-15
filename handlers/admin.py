@@ -206,7 +206,7 @@ def get_view_users_keyboard(role: int) -> InlineKeyboardMarkup:
 async def cmd_user_profile(message: types.Message, state: FSMContext):
     await message.answer(
         "Выберите пользователя для просмотра профиля или введите юзернейм:",
-        reply_markup=get_users_keyboard(4)
+        reply_markup=get_view_users_keyboard(4)
     )
     await state.set_state(AdminStates.viewing_user_profile)
 
@@ -369,7 +369,7 @@ async def cmd_reset_balance(message: types.Message, state: FSMContext):
 
     await message.answer("Выберите пользователя, чей баланс нужно обнулить:", reply_markup=keyboard)
     await state.set_state(AdminStates.selecting_user)
-    
+
 @dp.callback_query(AdminStates.selecting_user)
 async def process_select_user(callback_query: types.CallbackQuery, state: FSMContext):
     user_id = callback_query.data.replace("select_user_", "")
