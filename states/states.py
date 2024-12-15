@@ -32,4 +32,5 @@ class AdminStates(StatesGroup):
     blocking_user = State()
     confirm_reset_balance = State()
     resetting_partial_balance = State()
+    selecting_user = State()
 
