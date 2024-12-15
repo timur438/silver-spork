@@ -341,33 +341,48 @@ async def cancel_block(callback_query: types.CallbackQuery, state: FSMContext):
 @dp.message(F.text == "⚡ Обнулить баланс")
 @role_required(3)
 async def cmd_reset_balance(message: types.Message, state: FSMContext):
-    await message.answer("Введите юзернейм пользователя, чей баланс нужно обнулить:")
-    await state.set_state(AdminStates.resetting_balance)
-
-@dp.message(AdminStates.resetting_balance)
-async def process_reset_balance(message: types.Message, state: FSMContext):
-    username = message.text.lstrip("@")
     db = next(get_db())
-    user = db.query(User).filter(User.username == username).first()
+    admin_user = db.query(User).filter(User.username == message.from_user.username).first()
 
-    if user:
-        admin_user = db.query(User).filter(User.username == message.from_user.username).first()
-        
-        if admin_user.role >= user.role and message.from_user.username != username:
-            await message.answer("Вы не можете обнулить баланс у пользователя с такой же или более высокой ролью.")
-            await state.clear()
-            return
+    if not admin_user:
+        await message.answer("Произошла ошибка: ваш аккаунт не найден в базе данных.")
+        return
 
-        await message.answer(
-            f"Вы хотите обнулить баланс пользователя @{username}.\nВыберите действие:",
-            reply_markup=get_balance_reset_keyboard()
-        )
+    eligible_users = db.query(User).filter(User.role <= (admin_user.role - 1)).all()
 
-        await state.update_data(username=username)
-        await state.set_state(AdminStates.confirm_reset_balance)
-    else:
-        await message.answer(f"Пользователь с юзернеймом @{username} не найден.")
+    if not eligible_users:
+        await message.answer("Нет пользователей с доступной для вас ролью для обнуления баланса.")
+        return
+
+    keyboard = InlineKeyboardMarkup()
+    for user in eligible_users:
+        keyboard.add(InlineKeyboardButton(text=f"@{user.username} (Баланс: {user.balance})", callback_data=f"select_user_{user.id}"))
+
+    await message.answer("Выберите пользователя, чей баланс нужно обнулить:", reply_markup=keyboard)
+    await state.set_state(AdminStates.selecting_user)
+
+@dp.callback_query(AdminStates.selecting_user)
+async def process_select_user(callback_query: types.CallbackQuery, state: FSMContext):
+    user_id = callback_query.data.replace("select_user_", "")
+
+    if not user_id.isdigit():
+        await callback_query.message.answer("Некорректный выбор пользователя.")
+        return
+
+    db = next(get_db())
+    user = db.query(User).filter(User.id == int(user_id)).first()
+
+    if not user:
+        await callback_query.message.answer("Пользователь не найден.")
         await state.clear()
+        return
+
+    await callback_query.message.answer(
+        f"Вы хотите обнулить баланс пользователя @{user.username} (Текущий баланс: {user.balance}).\nВыберите действие:",
+        reply_markup=get_balance_reset_keyboard()
+    )
+    await state.update_data(user_id=user.id, username=user.username)
+    await state.set_state(AdminStates.confirm_reset_balance)
 
 @dp.callback_query(AdminStates.confirm_reset_balance)
 async def process_confirm_reset_balance(callback_query: types.CallbackQuery, state: FSMContext):
