@@ -338,6 +338,9 @@ async def cancel_block(callback_query: types.CallbackQuery, state: FSMContext):
     await callback_query.answer("Операция отменена.")
     await state.clear()
 
+def format_balance(balance):
+    return f"{balance:,.0f}".replace(",", " ")
+
 @dp.message(F.text == "⚡ Обнулить баланс")
 @role_required(3)
 async def cmd_reset_balance(message: types.Message, state: FSMContext):
@@ -356,14 +359,17 @@ async def cmd_reset_balance(message: types.Message, state: FSMContext):
 
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=f"@{user.username} (Баланс: {user.balance})", callback_data=f"select_user_{user.id}")]
+            [InlineKeyboardButton(
+                text=f"@{user.username} (Баланс: {format_balance(user.balance)})", 
+                callback_data=f"select_user_{user.id}"
+            )]
             for user in eligible_users
         ]
     )
 
     await message.answer("Выберите пользователя, чей баланс нужно обнулить:", reply_markup=keyboard)
     await state.set_state(AdminStates.selecting_user)
-
+    
 @dp.callback_query(AdminStates.selecting_user)
 async def process_select_user(callback_query: types.CallbackQuery, state: FSMContext):
     user_id = callback_query.data.replace("select_user_", "")
