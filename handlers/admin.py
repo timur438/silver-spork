@@ -62,8 +62,8 @@ async def cmd_add_cashier(message: types.Message, state: FSMContext):
 
 @dp.callback_query(AdminStates.adding_cashier)
 async def process_add_cashier_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    username_data = callback_query.data.split("_")[1]
-    username = username_data.text.lstrip("@")
+    data = json.loads(callback_query.data) 
+    username = data.get("username")
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
 
@@ -88,8 +88,8 @@ async def cmd_add_admin(message: types.Message, state: FSMContext):
 
 @dp.callback_query(AdminStates.adding_admin)
 async def process_add_admin_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    username_data = callback_query.data.split("_")[1]
-    username = username_data.text.lstrip("@")
+    data = json.loads(callback_query.data) 
+    username = data.get("username")
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
 
@@ -114,8 +114,8 @@ async def cmd_remove_admin(message: types.Message, state: FSMContext):
 
 @dp.callback_query(AdminStates.removing_admin)
 async def process_remove_admin_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    username_data = callback_query.data.split("_")[1]
-    username = username_data.text.lstrip("@")
+    data = json.loads(callback_query.data) 
+    username = data.get("username")
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
 
@@ -138,7 +138,6 @@ async def process_confirm_removal_admin(callback_query: types.CallbackQuery, sta
     data = json.loads(callback_query.data)
     action = data.get("action")
     username = data.get("username")
-
 
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
@@ -215,10 +214,9 @@ async def cmd_user_profile(message: types.Message, state: FSMContext):
     )
     await state.set_state(AdminStates.viewing_user_profile)
 
-@dp.callback_query(F.data.startswith("view_user_"))
+@dp.callback_query(lambda c: json.loads(c.data).get("action") == "view_user")
 async def process_user_profile_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    data = json.loads(callback_query.data)  # Разбираем JSON
-    action = data.get("action")
+    data = json.loads(callback_query.data) 
     username = data.get("username")
 
     db = next(get_db())
@@ -295,13 +293,16 @@ async def process_block_user(callback_query: types.CallbackQuery, state: FSMCont
     action = data.get("action")
     username = data.get("username")
  
-    db = next(get_db())
-    user = db.query(User).filter(User.username == username).first()
-
+    if action == "block_user":
+        db = next(get_db())
+        user = db.query(User).filter(User.username == username).first()
+    else:
+        return
+    
     if user:
         keyboard = InlineKeyboardMarkup(row_width=2)
         keyboard.add(
-            InlineKeyboardButton("Да, заблокировать", callback_data=f"confirm_block_{username}"),
+            InlineKeyboardButton("Да, заблокировать", callback_data = json.dumps({"action": "confirm_block", "username": username})),
             InlineKeyboardButton("Отмена", callback_data="cancel_block")
         )
 
@@ -316,13 +317,14 @@ async def process_block_user(callback_query: types.CallbackQuery, state: FSMCont
 
 @dp.callback_query(AdminStates.blocking_user)
 async def process_confirm_block_user(callback_query: types.CallbackQuery, state: FSMContext):
-    action = callback_query.data.split("_")[0]
-    username = callback_query.data.split("_")[2]
+    data = json.loads(callback_query.data)
+    action = data.get("action")
+    username = data.get("username")
 
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
 
-    if action == "confirm" and user:
+    if action == "confirm_block" and user:
         blacklisted_user = db.query(Blacklist).filter(Blacklist.username == username).first()
 
         if blacklisted_user:
