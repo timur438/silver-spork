@@ -9,7 +9,6 @@ from database.models import User, Bank, Card
 from states import CardStates, BankStates
 from keyboards.menu_keyboards import role_1_keyboard, role_2_keyboard, role_3_keyboard, role_4_keyboard
 from utils.decorators import role_required
-import json
 
 def parse_amount(amount_str):
     amount_str = amount_str.replace(' ', '').replace('.', '').replace(',', '')
@@ -109,16 +108,15 @@ async def cmd_add_card(message: types.Message, state: FSMContext):
 
     bank_keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=bank.name, callback_data = json.dumps({"action": "select_bank", "bank_name": bank.name}))]
+            [InlineKeyboardButton(text=bank.name, callback_data = f"select_bank|{bank.name}")]
             for bank in banks
         ]
     )
     await message.answer("Выберите банк:", reply_markup=bank_keyboard)
 
-@dp.callback_query(lambda c: json.loads(c.data).get("action") == "select_bank")
+@dp.callback_query(lambda c: c.data.split("|")[0] == "select_bank")
 async def process_select_bank_callback(callback: types.CallbackQuery, state: FSMContext):
-    data = json.loads(callback.data)
-    bank_name = data.get("bank_name")
+    action, bank_name = callback.data.split("|")
     db = next(get_db())
     bank = db.query(Bank).filter(Bank.name == bank_name).first()
     if bank:
@@ -260,16 +258,15 @@ async def cmd_remove_bank(message: types.Message, state: FSMContext):
 
     bank_keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=bank.name, callback_data = json.dumps({"action": "delete_bank", "bank_name": bank.name}))]
+            [InlineKeyboardButton(text=bank.name, callback_data = f"delete_bank|{bank.name}")]
             for bank in banks
         ]
     )
     await message.answer("Выберите банк для удаления:", reply_markup=bank_keyboard)
 
-@dp.callback_query(lambda c: json.loads(c.data).get("action") == "delete_bank")
+@dp.callback_query(lambda c: c.data.split("|")[0] == "delete_bank")
 async def process_remove_bank_callback(callback: types.CallbackQuery, state: FSMContext):
-    data = json.loads(callback.data)
-    bank_name = data.get("bank_name")
+    action, bank_name = callback.data.split("|")
     db = next(get_db())
     bank = db.query(Bank).filter(Bank.name == bank_name).first()
     user = db.query(User).filter(User.username == callback.from_user.username).first()
@@ -296,34 +293,32 @@ async def cmd_transfer(message: types.Message, state: FSMContext):
 
     user_keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=user.username, callback_data = json.dumps({"action": "transfer_from", "username": user.username}))]
+            [InlineKeyboardButton(text=user.username, callback_data = f"transfer_from|{user.username}")]
             for user in users
         ]
     )
     await message.answer("Выберите пользователя, с чьего баланса будут списаны средства:", reply_markup=user_keyboard)
     await state.set_state("transfer_select_from")
 
-@dp.callback_query(lambda c: json.loads(c.data).get("action") == "transfer_from")
+@dp.callback_query(lambda c: c.data.split("|")[0] == "transfer_from")
 async def process_transfer_from(callback: types.CallbackQuery, state: FSMContext):
-    data = json.loads(callback.data) 
-    username_from = data.get("username")
+    action, username_from = callback.data.split("|")
     await state.update_data(username_from=username_from)
 
     db = next(get_db())
     users = db.query(User).filter(User.role > 1, User.username != username_from).all()
     user_keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=user.username, callback_data = json.dumps({"action": "transfer_to", "username": user.username}))]
+            [InlineKeyboardButton(text=user.username, callback_data = f"transfer_to|{user.username}")]
             for user in users
         ]
     )
     await callback.message.edit_text("Выберите пользователя, на чей баланс будут зачислены средства:", reply_markup=user_keyboard)
     await state.set_state("transfer_select_to")
 
-@dp.callback_query(lambda c: json.loads(c.data).get("action") == "transfer_from")
+@dp.callback_query(lambda c: c.data.split("|")[0] == "transfer_to")
 async def process_transfer_to(callback: types.CallbackQuery, state: FSMContext):
-    data = json.loads(callback.data) 
-    username_to = data.get("username")
+    daction, username_to = callback.data.split("|")
     await state.update_data(username_to=username_to)
     await callback.message.edit_text("Введите сумму перевода (например, 400 или 400.000):")
     await state.set_state("transfer_amount")
