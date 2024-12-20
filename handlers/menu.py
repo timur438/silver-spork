@@ -15,6 +15,9 @@ def parse_amount(amount_str):
     amount = int(amount_str)
     return amount
 
+def format_balance(balance):
+    return f"{balance:,.0f}".replace(",", " ")
+
 @dp.message(F.text == "💸 Съём")
 @role_required(2)
 async def cmd_withdraw(message: types.Message, state: FSMContext):
@@ -385,12 +388,12 @@ async def cmd_my_profile(message: types.Message):
 
     if user:
         profile_info = (
-            f"👤 **Профиль:**\n"
-            f"📌 **ID:** {user.id}\n"
-            f"📛 **Юзернейм:** @{user.username}\n"
-            f"📝 **Полное имя:** {user.full_name if user.full_name else 'Не указано'}\n"
-            f"🔑 **Роль:** {user.role} ({get_role_name(user.role)})\n"
-            f"💰 **Баланс:** {user.balance:.2f} 💵"
+            f"👤 Профиль:\n"
+            f"📌 ID: {user.id}\n"
+            f"📛 Юзернейм: @{user.username}\n"
+            f"📝 Полное имя: {user.full_name if user.full_name else 'Не указано'}\n"
+            f"🔑 Роль: {user.role} ({get_role_name(user.role)})\n"
+            f"💰 Баланс: {format_balance(user.balance)} 💵"
         )
         await message.answer(profile_info, parse_mode="HTML")
     else:
