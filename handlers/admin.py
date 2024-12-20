@@ -116,9 +116,12 @@ async def process_remove_admin_callback(callback_query: types.CallbackQuery, sta
     user = db.query(User).filter(User.username == username).first()
 
     if user and user.role == 3:
-        confirmation_keyboard = InlineKeyboardMarkup(row_width=2).add(
-            InlineKeyboardButton("Да", callback_data = f"confirm_remove_admin|{username}"),
-            InlineKeyboardButton("Нет", callback_data="cancel")
+        confirmation_keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton("Да", callback_data=f"confirm_remove_admin|{username}"),
+                InlineKeyboardButton("Нет", callback_data="cancel")]
+            ],
+            row_width=2
         )
         await callback_query.message.answer(
             f"Вы уверены, что хотите удалить админа @{username}?", 
