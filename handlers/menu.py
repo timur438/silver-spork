@@ -58,7 +58,7 @@ async def process_withdraw_amount(message: types.Message, state: FSMContext):
         await state.update_data(amount=amount)
         confirm_keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="Да", callback_data="confirm_yes"), InlineKeyboardButton(text="Нет", callback_data="confirm_no")]
+                [InlineKeyboardButton(text="Да", callback_data="confirm_withdraw_yes"), InlineKeyboardButton(text="Нет", callback_data="confirm_withdraw_no")]
             ]
         )
         await message.answer(f"Подтвердите списание {amount} с карты:", reply_markup=confirm_keyboard)
@@ -67,9 +67,9 @@ async def process_withdraw_amount(message: types.Message, state: FSMContext):
         await message.answer("Превышен лимит на карте или карта не найдена. Попробуйте снова.")
         await state.clear()
 
-@dp.callback_query(F.data.startswith("confirm_"))
+@dp.callback_query(F.data.startswith("confirm_withdraw_"))
 async def process_withdraw_confirm_callback(callback: types.CallbackQuery, state: FSMContext):
-    action = callback.data.split("_")[1]
+    action = callback.data.split("_")[-1]
     if action == "yes":
         data = await state.get_data()
         last_four_digits = data.get('last_four_digits')
