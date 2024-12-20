@@ -131,7 +131,7 @@ async def process_remove_admin_callback(callback_query: types.CallbackQuery, sta
     await state.clear()
 
 
-@dp.callback_query(AdminStates.confirm_removal)
+@dp.callback_query(F.data.startswith("confirm_remove_admin"))
 async def process_confirm_removal_admin(callback_query: types.CallbackQuery, state: FSMContext):
     action, username = callback_query.data.split("|")
 
