@@ -1,4 +1,3 @@
-import json
 from aiogram import types, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -20,7 +19,7 @@ def get_users_keyboard(role: int) -> InlineKeyboardMarkup:
     db = next(get_db())
     users = db.query(User).filter(User.role <= role).all()
     keyboard = [
-        [InlineKeyboardButton(text=f"@{user.username}", callback_data=json.dumps({"action": "user", "username": user.username}))]
+        [InlineKeyboardButton(text=f"@{user.username}", callback_data=f"username|{user.username}")]
         for user in users
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -62,8 +61,7 @@ async def cmd_add_cashier(message: types.Message, state: FSMContext):
 
 @dp.callback_query(AdminStates.adding_cashier)
 async def process_add_cashier_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    data = json.loads(callback_query.data) 
-    username = data.get("username")
+    action, username = callback_query.data.split("|")
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
 
@@ -88,8 +86,7 @@ async def cmd_add_admin(message: types.Message, state: FSMContext):
 
 @dp.callback_query(AdminStates.adding_admin)
 async def process_add_admin_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    data = json.loads(callback_query.data) 
-    username = data.get("username")
+    action, username = callback_query.data.split("|")
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
 
@@ -114,14 +111,13 @@ async def cmd_remove_admin(message: types.Message, state: FSMContext):
 
 @dp.callback_query(AdminStates.removing_admin)
 async def process_remove_admin_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    data = json.loads(callback_query.data) 
-    username = data.get("username")
+    action, username = callback_query.data.split("|")
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
 
     if user and user.role == 3:
         confirmation_keyboard = InlineKeyboardMarkup(row_width=2).add(
-            InlineKeyboardButton("Да", callback_data = json.dumps({"action": "confirm_remove_admin", "username": username})),
+            InlineKeyboardButton("Да", callback_data = f"confirm_remove_admin|{username}"),
             InlineKeyboardButton("Нет", callback_data="cancel")
         )
         await callback_query.message.answer(
@@ -135,9 +131,7 @@ async def process_remove_admin_callback(callback_query: types.CallbackQuery, sta
 
 @dp.callback_query(AdminStates.confirm_removal)
 async def process_confirm_removal_admin(callback_query: types.CallbackQuery, state: FSMContext):
-    data = json.loads(callback_query.data)
-    action = data.get("action")
-    username = data.get("username")
+    action, username = callback_query.data.split("|")
 
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()
@@ -200,7 +194,7 @@ def get_view_users_keyboard(role: int) -> InlineKeyboardMarkup:
     db = next(get_db())
     users = db.query(User).filter(User.role <= role).all()
     keyboard = [
-        [InlineKeyboardButton(text=f"@{user.username}", callback_data = json.dumps({"action": "view_user", "username": user.username}))]
+        [InlineKeyboardButton(text=f"@{user.username}", callback_data = f"view_user|{user.username}")]
         for user in users
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -214,10 +208,9 @@ async def cmd_user_profile(message: types.Message, state: FSMContext):
     )
     await state.set_state(AdminStates.viewing_user_profile)
 
-@dp.callback_query(lambda c: json.loads(c.data).get("action") == "view_user")
+@dp.callback_query(lambda c: c.data.split("|")[0] == "view_user")
 async def process_user_profile_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    data = json.loads(callback_query.data) 
-    username = data.get("username")
+    action, username = callback_query.data.split("|")
 
     db = next(get_db())
     
@@ -282,16 +275,14 @@ async def cmd_block_user(message: types.Message, state: FSMContext):
     
     keyboard = InlineKeyboardMarkup(row_width=2)
     for user in users:
-        keyboard.add(InlineKeyboardButton(f"@{user.username}", callback_data=json.dumps({"action": "block_user", "username": user.username})))
+        keyboard.add(InlineKeyboardButton(f"@{user.username}", callback_data=f"block_user|{user.username}"))
 
     await message.answer("Выберите пользователя для блокировки:", reply_markup=keyboard)
     await state.set_state(AdminStates.blocking_user)
 
 @dp.callback_query(AdminStates.blocking_user)
 async def process_block_user(callback_query: types.CallbackQuery, state: FSMContext):
-    data = json.loads(callback_query.data)
-    action = data.get("action")
-    username = data.get("username")
+    action, username = callback_query.data.split("|")
  
     if action == "block_user":
         db = next(get_db())
@@ -302,7 +293,7 @@ async def process_block_user(callback_query: types.CallbackQuery, state: FSMCont
     if user:
         keyboard = InlineKeyboardMarkup(row_width=2)
         keyboard.add(
-            InlineKeyboardButton("Да, заблокировать", callback_data = json.dumps({"action": "confirm_block", "username": username})),
+            InlineKeyboardButton("Да, заблокировать", callback_data = f"confirm_block|{username}"),
             InlineKeyboardButton("Отмена", callback_data="cancel_block")
         )
 
@@ -317,9 +308,7 @@ async def process_block_user(callback_query: types.CallbackQuery, state: FSMCont
 
 @dp.callback_query(AdminStates.blocking_user)
 async def process_confirm_block_user(callback_query: types.CallbackQuery, state: FSMContext):
-    data = json.loads(callback_query.data)
-    action = data.get("action")
-    username = data.get("username")
+    action, username = callback_query.data.split("|")
 
     db = next(get_db())
     user = db.query(User).filter(User.username == username).first()

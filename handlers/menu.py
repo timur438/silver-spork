@@ -321,7 +321,7 @@ async def process_transfer_from(callback: types.CallbackQuery, state: FSMContext
 
 @dp.callback_query(lambda c: c.data.split("|")[0] == "transfer_to")
 async def process_transfer_to(callback: types.CallbackQuery, state: FSMContext):
-    daction, username_to = callback.data.split("|")
+    action, username_to = callback.data.split("|")
     await state.update_data(username_to=username_to)
     await callback.message.edit_text("Введите сумму перевода (например, 400 или 400.000):")
     await state.set_state("transfer_amount")
